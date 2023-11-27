@@ -1,4 +1,4 @@
-# Telegram Chat Statistics
+# Chat text analysis
 
 ---
 
