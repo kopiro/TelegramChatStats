@@ -8,6 +8,7 @@ import bokeh
 import bokeh.plotting as bkh
 from bokeh.core.properties import value
 from bokeh.transform import dodge
+from bokeh.models import ColumnDataSource
 import codecs
 import csv
 
@@ -15,6 +16,7 @@ import csv
 colors = ["#34ace0", "#ffb142"]
 colors = ["#686de0", "#ffbe76"]
 
+k_same_initiation_hours_treshold = 5 * 60 * 60
 
 def count_occurrences(message, wordlist):
     count = 0
@@ -33,6 +35,8 @@ def _parse_chat(chat, date_filter, wordlist):
     metrics["B"]["months"] = {}
     metrics["A"]["months_chars"] = {}
     metrics["B"]["months_chars"] = {}
+    metrics["A"]["days_chars"] = {}
+    metrics["B"]["days_chars"] = {}
     metrics["A"]["weekdays"] = {}
     metrics["B"]["weekdays"] = {}
     metrics["A"]["hourofday"] = {}
@@ -43,6 +47,8 @@ def _parse_chat(chat, date_filter, wordlist):
     metrics["B"]["monthly_time_to_reply"] = {}
     metrics["A"]["monthly_avg_reply_time"] = {}
     metrics["B"]["monthly_avg_reply_time"] = {}
+    metrics["A"]["monthly_new_initiation"] = {}
+    metrics["B"]["monthly_new_initiation"] = {}
     metrics["A"]["monthly_pictures"] = {}
     metrics["B"]["monthly_pictures"] = {}
     metrics["A"]["monthly_calls"] = {}
@@ -73,14 +79,15 @@ def _parse_chat(chat, date_filter, wordlist):
         if date_obj >= oldest_date:
             month_str = str(date_obj.year) + "-" + str(date_obj.month) + "-1"
             month_obj = datetime.strptime(month_str, "%Y-%m-%d")
+            day_obj = date_obj.date()
             # text and media
             if message["type"] == "message":
                 metrics[person]["name"] = message["from"]
                 metrics[person]["months"][month_obj] = (
                     metrics[person]["months"].get(month_obj, 0) + 1
                 )
-                metrics[person]["days"][date_obj.date()] = (
-                    metrics[person]["days"].get(date_obj.date(), 0) + 1
+                metrics[person]["days"][day_obj] = (
+                    metrics[person]["days"].get(day_obj, 0) + 1
                 )
                 metrics[person]["weekdays"][date_obj.weekday()] = (
                     metrics[person]["weekdays"].get(date_obj.weekday(), 0) + 1
@@ -95,6 +102,9 @@ def _parse_chat(chat, date_filter, wordlist):
                             metrics[person]["months_chars"][month_obj] = metrics[
                                 person
                             ]["months_chars"].get(month_obj, 0) + len(line)
+                            metrics[person]["days_chars"][day_obj] = metrics[
+                                person
+                            ]["days_chars"].get(day_obj, 0) + len(line)
                             # check if words occurr in message
                             metrics[person]["monthly_word_occurrence"][
                                 month_obj
@@ -108,6 +118,9 @@ def _parse_chat(chat, date_filter, wordlist):
                     metrics[person]["months_chars"][month_obj] = metrics[person][
                         "months_chars"
                     ].get(month_obj, 0) + len(message["text"])
+                    metrics[person]["days_chars"][day_obj] = metrics[person][
+                        "days_chars"
+                    ].get(day_obj, 0) + len(message["text"])
                     # check if words occurr in message
                     metrics[person]["monthly_word_occurrence"][month_obj] = metrics[
                         person
@@ -122,17 +135,30 @@ def _parse_chat(chat, date_filter, wordlist):
                                 previous_message["date"], "%Y-%m-%dT%H:%M:%S"
                             )
                         ).total_seconds()
-                        metrics[person]["monthly_n_replied"][month_obj] = (
-                            metrics[person]["monthly_n_replied"].get(month_obj, 0) + 1
-                        )
-                        metrics[person]["monthly_time_to_reply"][month_obj] = (
-                            metrics[person]["monthly_time_to_reply"].get(month_obj, 0)
-                            + replytime
-                        )
-                        avg_time = metrics[person]["monthly_time_to_reply"].get(
-                            month_obj, 0
-                        ) / metrics[person]["monthly_n_replied"].get(month_obj, 0)
-                        metrics[person]["monthly_avg_reply_time"][month_obj] = avg_time
+                        # Check if previous message is within timeframe to be considered a new conversation
+                        if replytime < k_same_initiation_hours_treshold:
+                            metrics[person]["monthly_n_replied"][month_obj] = (
+                                metrics[person]["monthly_n_replied"].get(month_obj, 0) + 1
+                            )
+                            metrics[person]["monthly_time_to_reply"][month_obj] = (
+                                metrics[person]["monthly_time_to_reply"].get(month_obj, 0)
+                                + replytime
+                            )
+                            avg_time = metrics[person]["monthly_time_to_reply"].get(
+                                month_obj, 0
+                            ) / metrics[person]["monthly_n_replied"].get(month_obj, 0)
+                            metrics[person]["monthly_avg_reply_time"][month_obj] = avg_time
+                        else:
+                            # Then it's a new initiation
+                            metrics[person]["monthly_new_initiation"][month_obj] = (
+                                metrics[person]["monthly_new_initiation"].get(month_obj, 0) + 1
+                            )
+                else:
+                    # First of all initiation
+                    metrics[person]["monthly_new_initiation"][month_obj] = (
+                        metrics[person]["monthly_new_initiation"].get(month_obj, 0) + 1
+                    )
+
                 if "photo" in message:
                     metrics[person]["monthly_pictures"][month_obj] = (
                         metrics[person]["monthly_pictures"].get(month_obj, 0) + 1
@@ -162,12 +188,10 @@ def _parse_chat(chat, date_filter, wordlist):
     metrics["B"]["day_series"] = pd.Series(metrics["B"]["days"])
     metrics["A"]["series_days"] = pd.Series(metrics["A"]["days"])
     metrics["B"]["series_days"] = pd.Series(metrics["B"]["days"])
+
     metrics["A"]["frame_days"] = metrics["A"]["series_days"].to_frame(name="frequency")
     metrics["B"]["frame_days"] = metrics["B"]["series_days"].to_frame(name="frequency")
-    # 	metrics['A']['series_month'] = pd.Series(metrics['A']['months'])
-    # 	metrics['B']['series_month'] = pd.Series(metrics['B']['months'])
-    # 	metrics['A']['frame_months'] = metrics['A']['series_month'].to_frame(name='frequency')
-    # 	metrics['B']['frame_months'] = metrics['B']['series_month'].to_frame(name='frequency')
+    
     metrics["A"]["frame_months"] = hacky_solution_to_fix_timedelta_dodge(
         metrics["A"]["months"], -5
     )
@@ -185,6 +209,12 @@ def _parse_chat(chat, date_filter, wordlist):
     )
     metrics["B"]["frame_months_reply_time"] = hacky_solution_to_fix_timedelta_dodge(
         metrics["B"]["monthly_avg_reply_time"], 5
+    )
+    metrics["A"]["frame_months_new_initiation"] = hacky_solution_to_fix_timedelta_dodge(
+        metrics["A"]["monthly_new_initiation"], -5
+    )
+    metrics["B"]["frame_months_new_initiation"] = hacky_solution_to_fix_timedelta_dodge(
+        metrics["B"]["monthly_new_initiation"], 5
     )
     metrics["A"]["frame_months_pictures"] = hacky_solution_to_fix_timedelta_dodge(
         metrics["A"]["monthly_pictures"], -5
@@ -214,14 +244,20 @@ def _parse_chat(chat, date_filter, wordlist):
     ] = hacky_solution_to_fix_timedelta_dodge(
         metrics["B"]["monthly_word_occurrence"], 5
     )
+
+    metrics["A"]["frame_days_chars"] = pd.Series(metrics["A"]["days_chars"]).to_frame(name="frequency")
+    metrics["B"]["frame_days_chars"] = pd.Series(metrics["B"]["days_chars"]).to_frame(name="frequency")
+
     metrics["A"]["series_weekdays"] = pd.Series(metrics["A"]["weekdays"])
     metrics["B"]["series_weekdays"] = pd.Series(metrics["B"]["weekdays"])
+    
     metrics["A"]["frame_weekdays"] = metrics["A"]["series_weekdays"].to_frame(
         name="frequency"
     )
     metrics["B"]["frame_weekdays"] = metrics["B"]["series_weekdays"].to_frame(
         name="frequency"
     )
+    
     metrics["A"]["series_hoursofday"] = pd.Series(metrics["A"]["hourofday"])
     metrics["B"]["series_hoursofday"] = pd.Series(metrics["B"]["hourofday"])
     metrics["A"]["frame_hoursofday"] = metrics["A"]["series_hoursofday"].to_frame(
@@ -252,12 +288,12 @@ The bokeh.transforms.dodge method does not support offsets of type (datetime)
 """
 
 
-def hacky_solution_to_fix_timedelta_dodge(months, delta):
+def hacky_solution_to_fix_timedelta_dodge(chunks, delta):
     altered = {}
-    for month in months:
-        altered[month + timedelta(days=delta)] = altered.get(
-            month + timedelta(days=delta), 0
-        ) + months.get(month, 0)
+    for c in chunks:
+        altered[c + timedelta(days=delta)] = altered.get(
+            c + timedelta(days=delta), 0
+        ) + chunks.get(c, 0)
     series = pd.Series(altered)
     return series.to_frame(name="frequency")
 
@@ -266,15 +302,6 @@ def hacky_solution_to_fix_timedelta_dodge(months, delta):
 def _message_graphs(conv_path, chat, date_filter, wordlist):
     metrics = _parse_chat(chat, date_filter, wordlist)
 
-    # commented out because this graph is visually unpleasing and not very
-
-    # filename = 'plot_days_' + metrics['A']['name'] + '.html'
-    # filename = ''.join([x for x in filename if ord(x) < 128]) # strip non-ascii characters
-    # histogram_days(filename, metrics['A']['frame_days'], metrics['A']['name'], colors[0])
-    # filename = 'plot_days_' + metrics['B']['name'] + '.html'
-    # filename = ''.join([x for x in filename if ord(x) < 128]) # strip non-ascii characters
-    # histogram_days(filename, metrics['B']['frame_days'], metrics['B']['name'], colors[1])
-    # histogram_month_stacked('plot_month.html', data_months, metrics['A']['name'], metrics['B']['name'])
     histogram_month(conv_path,
         "plot_month.html",
         metrics,
@@ -288,6 +315,13 @@ def _message_graphs(conv_path, chat, date_filter, wordlist):
         "frame_months_reply_time",
         "Average monthly reply delay time over time per person",
         "average delay in seconds",
+    )
+    histogram_month(conv_path,
+        "plot_month_new_initiation.html",
+        metrics,
+        "frame_months_new_initiation",
+        "Monthly new initiation count over time per person",
+        "initiation count",
     )
     # histogram_month(conv_path,
     #     "plot_month_calls.html",
@@ -335,57 +369,14 @@ def _message_graphs(conv_path, chat, date_filter, wordlist):
     # )
 
     histogram_month_chars(conv_path, "plot_month_characters.html", metrics)
+    # histogram_days_chars(conv_path, "plot_days_characters.html", metrics)
+
     return metrics
-
-
-"""
-@input filename
-@input data
-@input namea
-@input nameb
-
-This method is currently not used. 
-However it provides a different approach to display the data stacked instead of 
-both person's bars next to each other.
-Though I found this visualization to be more confusing and the data
-between the two persons cannot easily be compared.
-"""
-# https://bokeh.pydata.org/en/latest/docs/user_guide/categorical.html
-def histogram_month_stacked(conv_path, filename, data, namea, nameb):
-    bkh.reset_output()
-    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
-    ##### STACKED BAR GRAPH for monthly data
-    fig = bkh.figure(
-        x_axis_type="datetime", title="Messages per Month", width=720, height=480
-    )
-    fig.vbar_stack(
-        [namea, nameb],
-        x="index",
-        width=timedelta(days=20),
-        color=colors,
-        source=data,
-        legend_label=[value(x) for x in [namea, nameb]],
-    )
-    fig.xaxis.axis_label = "Date"
-    fig.yaxis.axis_label = "Message count"
-    # bkh.show(fig)
-    return
-
-
-"""
-@input filename
-@input metrics (dict)
-"""
 
 
 def histogram_month_chars(conv_path, filename, metrics):
     bkh.reset_output()
     bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
-    data_months = {
-        "index": metrics["A"]["frame_months_chars"].index,
-        metrics["A"]["name"]: metrics["A"]["frame_months_chars"].frequency,
-        metrics["B"]["name"]: metrics["B"]["frame_months_chars"].frequency,
-    }
     fig = bkh.figure(
         x_axis_type="datetime",
         title="Monthly character count over time per person",
@@ -410,17 +401,42 @@ def histogram_month_chars(conv_path, filename, metrics):
     )
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = "Number of characters"
-    # bkh.show(fig)
+    bkh.show(fig)
     return
 
 
-"""
-@input filename
-@input metrics (dict)
-@input key
-@input title_str
-@input ylabel
-"""
+def histogram_days_chars(conv_path, filename, metrics):
+    bkh.reset_output()
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
+    fig = bkh.figure(
+        x_axis_type="datetime",
+        title="Daily character count over time per person",
+        width=720,
+        height=480,
+    )
+    fig.line(
+        x='x',
+        y='y',
+        source=ColumnDataSource(data={'x': metrics["A"]["frame_days_chars"].index, 'y': metrics["A"]["frame_days_chars"].values}),
+        line_color=colors[0],
+        legend_label=metrics["A"]["name"],
+        line_width=2,
+        line_dash="solid"
+    )
+    fig.line(
+        x='x',
+        y='y',
+        source=ColumnDataSource(data={'x': metrics["B"]["frame_days_chars"].index, 'y': metrics["B"]["frame_days_chars"].values}),
+        line_color=colors[1],
+        legend_label=metrics["B"]["name"],
+        line_width=2,
+        line_dash="solid"
+    )
+    fig.xaxis.axis_label = "Date"
+    fig.yaxis.axis_label = "Number of characters"
+    bkh.show(fig)
+    return
+
 
 
 def histogram_month(conv_path, filename, metrics, key, title_str, ylabel):
@@ -450,38 +466,35 @@ def histogram_month(conv_path, filename, metrics, key, title_str, ylabel):
     )
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = ylabel
-    # bkh.show(fig)
+    bkh.show(fig)
     return
 
 
-"""
-@input filename
-@input frame
-@imput name of the person
-@input color for this person
-"""
-
-
-def histogram_days(conv_path, filename, frame, name, color):
+def histogram_days(conv_path, filename, metrics, key, title_str, ylabel):
     bkh.reset_output()
     bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
-    fig = bkh.figure(
-        x_axis_type="datetime",
-        title="Message count per day of " + name,
-        width=720,
-        height=480,
+    fig = bkh.figure(x_axis_type="datetime", title=title_str, width=720, height=480)
+    fig.vbar(
+        x="index",
+        top="frequency",
+        width=timedelta(days=10),
+        source=metrics["A"][key],
+        color=colors[0],
+        legend_label=metrics["A"]["name"],
     )
-    fig.line(frame.index, frame.frequency, color=color, line_width=3)
+    fig.vbar(
+        x="index",
+        top="frequency",
+        width=timedelta(days=10),
+        source=metrics["B"][key],
+        color=colors[1],
+        legend_label=metrics["B"]["name"],
+    )
     fig.xaxis.axis_label = "Date"
-    fig.yaxis.axis_label = "Frequency"
-    # bkh.show(fig)
+    fig.yaxis.axis_label = ylabel
+    bkh.show(fig)
     return
 
-
-"""
-@input filename
-@input metrics (dict)
-"""
 
 
 def histogram_weekdays(conv_path, filename, metrics):
@@ -520,17 +533,9 @@ def histogram_weekdays(conv_path, filename, metrics):
     )
     fig.xaxis.axis_label = "Weekday"
     fig.yaxis.axis_label = "Message count"
-    # bkh.show(fig)
+    bkh.show(fig)
     return
 
-
-"""
-@input filename
-@input metrics (dict)
-@input key
-@input title_str
-@input ylabel
-"""
 
 
 def histogram_hourofday(conv_path, filename, metrics, key, title_str, ylabel):
@@ -581,5 +586,5 @@ def histogram_hourofday(conv_path, filename, metrics, key, title_str, ylabel):
     )
     fig.xaxis.axis_label = "Time"
     fig.yaxis.axis_label = ylabel
-    # bkh.show(fig)
+    bkh.show(fig)
     return

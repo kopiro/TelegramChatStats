@@ -272,6 +272,7 @@ def main():
 
     print("generating graphs...")
     raw = calculate_graphs(conv_path, chat_data, date_filter, wordlist)
+    
     dump_dict_to_csv_file(conv_path, 
         "raw_weekdays_person.csv", raw["A"]["hourofday"]
     )
