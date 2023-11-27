@@ -43,6 +43,7 @@ def to_telegram_format(messages):
     data["chats"]["list"].append({})
     data["chats"]["list"][0]["name"] = "unknown"
     data["chats"]["list"][0]["type"] = "personal_chat"
+    data["chats"]["list"][0]["id"] = 1
     data["chats"]["list"][0]["messages"] = []
 
     id = 0

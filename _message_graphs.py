@@ -263,7 +263,7 @@ def hacky_solution_to_fix_timedelta_dodge(months, delta):
 
 
 # called by the main script
-def _message_graphs(chat, date_filter, wordlist):
+def _message_graphs(conv_path, chat, date_filter, wordlist):
     metrics = _parse_chat(chat, date_filter, wordlist)
 
     # commented out because this graph is visually unpleasing and not very
@@ -275,51 +275,51 @@ def _message_graphs(chat, date_filter, wordlist):
     # filename = ''.join([x for x in filename if ord(x) < 128]) # strip non-ascii characters
     # histogram_days(filename, metrics['B']['frame_days'], metrics['B']['name'], colors[1])
     # histogram_month_stacked('plot_month.html', data_months, metrics['A']['name'], metrics['B']['name'])
-    histogram_month(
+    histogram_month(conv_path,
         "plot_month.html",
         metrics,
         "frame_months",
         "Monthly message count over time per person",
         "Message count",
     )
-    histogram_month(
+    histogram_month(conv_path,
         "plot_month_replytime.html",
         metrics,
         "frame_months_reply_time",
         "Average monthly reply delay time over time per person",
         "average delay in seconds",
     )
-    # histogram_month(
+    # histogram_month(conv_path,
     #     "plot_month_calls.html",
     #     metrics,
     #     "frame_months_calls",
     #     "Number of calls per month (both persons)",
     #     "Amount",
     # )
-    # histogram_month(
+    # histogram_month(conv_path,
     #     "plot_month_call_time.html",
     #     metrics,
     #     "frame_months_call_duration",
     #     "Total time on call per month (both persons)",
     #     "total time in seconds",
     # )
-    histogram_month(
+    histogram_month(conv_path,
         "plot_month_photos.html",
         metrics,
         "frame_months_pictures",
         "Monthly photo count over time per person",
         "number of photos sent",
     )
-    histogram_month(
+    histogram_month(conv_path,
         "plot_month_word_occurrence.html",
         metrics,
         "frame_months_word_occurrence",
         "Occurrences of the strings: [" + ";\n".join(wordlist) + "]",
         "number of occurrences",
     )
-    histogram_weekdays("plot_weekdays.html", metrics)
+    histogram_weekdays(conv_path, "plot_weekdays.html", metrics)
 
-    histogram_hourofday(
+    histogram_hourofday(conv_path,
         "plot_hoursofday_messages.html",
         metrics,
         "frame_hoursofday",
@@ -334,7 +334,7 @@ def _message_graphs(chat, date_filter, wordlist):
     #     "number of calls",
     # )
 
-    histogram_month_chars("plot_month_characters.html", metrics)
+    histogram_month_chars(conv_path, "plot_month_characters.html", metrics)
     return metrics
 
 
@@ -351,9 +351,9 @@ Though I found this visualization to be more confusing and the data
 between the two persons cannot easily be compared.
 """
 # https://bokeh.pydata.org/en/latest/docs/user_guide/categorical.html
-def histogram_month_stacked(filename, data, namea, nameb):
+def histogram_month_stacked(conv_path, filename, data, namea, nameb):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     ##### STACKED BAR GRAPH for monthly data
     fig = bkh.figure(
         x_axis_type="datetime", title="Messages per Month", width=720, height=480
@@ -368,7 +368,7 @@ def histogram_month_stacked(filename, data, namea, nameb):
     )
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = "Message count"
-    bkh.show(fig)
+    # bkh.show(fig)
     return
 
 
@@ -378,9 +378,9 @@ def histogram_month_stacked(filename, data, namea, nameb):
 """
 
 
-def histogram_month_chars(filename, metrics):
+def histogram_month_chars(conv_path, filename, metrics):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     data_months = {
         "index": metrics["A"]["frame_months_chars"].index,
         metrics["A"]["name"]: metrics["A"]["frame_months_chars"].frequency,
@@ -410,7 +410,7 @@ def histogram_month_chars(filename, metrics):
     )
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = "Number of characters"
-    bkh.show(fig)
+    # bkh.show(fig)
     return
 
 
@@ -423,9 +423,9 @@ def histogram_month_chars(filename, metrics):
 """
 
 
-def histogram_month(filename, metrics, key, title_str, ylabel):
+def histogram_month(conv_path, filename, metrics, key, title_str, ylabel):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     data_months = {
         "index": metrics["A"][key].index,
         metrics["A"]["name"]: metrics["A"]["frame_months"].frequency,
@@ -450,7 +450,7 @@ def histogram_month(filename, metrics, key, title_str, ylabel):
     )
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = ylabel
-    bkh.show(fig)
+    # bkh.show(fig)
     return
 
 
@@ -462,9 +462,9 @@ def histogram_month(filename, metrics, key, title_str, ylabel):
 """
 
 
-def histogram_days(filename, frame, name, color):
+def histogram_days(conv_path, filename, frame, name, color):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     fig = bkh.figure(
         x_axis_type="datetime",
         title="Message count per day of " + name,
@@ -474,7 +474,7 @@ def histogram_days(filename, frame, name, color):
     fig.line(frame.index, frame.frequency, color=color, line_width=3)
     fig.xaxis.axis_label = "Date"
     fig.yaxis.axis_label = "Frequency"
-    bkh.show(fig)
+    # bkh.show(fig)
     return
 
 
@@ -484,9 +484,9 @@ def histogram_days(filename, frame, name, color):
 """
 
 
-def histogram_weekdays(filename, metrics):
+def histogram_weekdays(conv_path, filename, metrics):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     weekdays = [
         "Monday",
         "Tuesday",
@@ -520,7 +520,7 @@ def histogram_weekdays(filename, metrics):
     )
     fig.xaxis.axis_label = "Weekday"
     fig.yaxis.axis_label = "Message count"
-    bkh.show(fig)
+    # bkh.show(fig)
     return
 
 
@@ -533,9 +533,9 @@ def histogram_weekdays(filename, metrics):
 """
 
 
-def histogram_hourofday(filename, metrics, key, title_str, ylabel):
+def histogram_hourofday(conv_path, filename, metrics, key, title_str, ylabel):
     bkh.reset_output()
-    bkh.output_file("__generated__/" + filename, title=filename)
+    bkh.output_file("__generated__/" + conv_path + "/" + filename, title=filename)
     hours = [
         "00:00",
         "01:00",
@@ -581,5 +581,5 @@ def histogram_hourofday(filename, metrics, key, title_str, ylabel):
     )
     fig.xaxis.axis_label = "Time"
     fig.yaxis.axis_label = ylabel
-    bkh.show(fig)
+    # bkh.show(fig)
     return

@@ -32,7 +32,6 @@ from datetime import timedelta
 
 from _message_numerics import _message_numerics
 from _message_graphs import _message_graphs
-from _print_results import _print_results
 
 parser = optparse.OptionParser("telegram-stats")
 parser.add_option(
@@ -57,24 +56,24 @@ parser.add_option(
 (opts, args) = parser.parse_args()
 
 # Writes a dict in json format to a file
-def dump_to_json_file(filename, data):
-    with open("__generated__/" + filename, "w", encoding="utf-8") as fh:
+def dump_to_json_file(conv_path, filename, data):
+    with open("__generated__/" + conv_path + "/" + filename, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=4, sort_keys=True)
 
 
 # writes data utf-8 encoded to a file
 # important for emojis
-def dump_to_unicode_file(filename, data):
-    fh = codecs.open("__generated__/" + filename, "w", "utf-8")
+def dump_to_unicode_file(conv_path, filename, data):
+    fh = codecs.open("__generated__/" + conv_path + "/" + filename, "w", "utf-8")
     fh.write(data)
     fh.close()
 
 
 # writes a dict to a csv format
-def dump_dict_to_csv_file(filename, dict):
+def dump_dict_to_csv_file(conv_path, filename, dict):
     (
         pd.DataFrame.from_dict(data=dict, orient="index").to_csv(
-            "__generated__/" + filename, header=False, sep=";"
+            "__generated__/" + conv_path + "/" + filename, header=False, sep=";"
         )
     )
 
@@ -112,20 +111,95 @@ def select_chat_from_id(data, id):
         print("Error: wrong file format (keys not found)")
 
 
-def calculate_metrics(chat_data, date_filter):
+def dump_text_results(conv_path, metrics):
+    result = ""
+    result += "\n" + ("[name: " + metrics["A"]["name"] + "]")
+    result += "\n" + ("total message count:     \t" + str(metrics["A"]["total_messages"]))
+    result += "\n" + ("total word count:        \t" + str(metrics["A"]["total_words"]))
+    result += "\n" + ("total character count:   \t" + str(metrics["A"]["total_chars"]))
+    result += "\n" + ("average word count:      \t" + str(metrics["A"]["avg_words"]))
+    result += "\n" + ("total unique words:      \t" + str(metrics["A"]["unique_words"]))
+    result += "\n" + ("average character count: \t" + str(metrics["A"]["avg_chars"]))
+
+    if "urls" in metrics["A"]:
+        result += "\n" + ("used markdown in:        \t" + str(metrics["A"]["urls"]) + " messages")
+        result += "\n" + ("total urls in messages:  \t" + str(metrics["A"]["urls"]))
+    if "photo" in metrics["A"]:
+        result += "\n" + ("total photos:            \t" + str(metrics["A"]["photo"]))
+    for key in metrics["A"]["media"]:
+        result += "\n" + ("total " + str(key) + " count: \t\t" + str(metrics["A"]["media"][key]))
+
+    result += "\n" + ("")
+    result += "\n" + ("[name: " + metrics["B"]["name"] + "]")
+    result += "\n" + ("total message count:     \t" + str(metrics["B"]["total_messages"]))
+    result += "\n" + ("total word count:        \t" + str(metrics["B"]["total_words"]))
+    result += "\n" + ("total character count:   \t" + str(metrics["B"]["total_chars"]))
+    result += "\n" + ("average word count:      \t" + str(metrics["B"]["avg_words"]))
+    result += "\n" + ("total unique words:      \t" + str(metrics["B"]["unique_words"]))
+    result += "\n" + ("average character count: \t" + str(metrics["B"]["avg_chars"]))
+    if "urls" in metrics["B"]:
+        result += "\n" + ("used markdown in:        \t" + str(metrics["B"]["urls"]) + " messages")
+        result += "\n" + ("total urls in messages:  \t" + str(metrics["B"]["urls"]))
+    if "photo" in metrics["B"]:
+        result += "\n" + ("total photos:            \t" + str(metrics["B"]["photo"]))
+    for key in metrics["B"]["media"]:
+        result += "\n" + ("total " + str(key) + " count: \t\t" + str(metrics["B"]["media"][key]))
+
+    result += "\n" + ("")
+    result += "\n" + ("[ combined stats ]")
+    result += "\n" + ("total message count:     \t" + str(metrics["total"]))
+
+    dump_to_unicode_file(conv_path, "text_results.txt", result)
+
+
+def calculate_metrics(conv_path, chat_data, date_filter):
     metrics = _message_numerics(chat_data, date_filter)
-    dump_to_json_file("raw_metrics.json", metrics)
+    dump_to_json_file(conv_path, "raw_metrics.json", metrics)
+
+    LIMIT = 5
+    
+    # Emojis
     ustr = "" + metrics["A"]["name"] + "\n"
-    for e in metrics["A"]["emojilist"]:
+    for e in metrics["A"]["emojilist"][:LIMIT]:
         ustr += str(e[0]) + " : " + str(e[1]) + "\n"
     ustr += metrics["B"]["name"] + "\n"
-    for e in metrics["B"]["emojilist"]:
+    for e in metrics["B"]["emojilist"][:LIMIT]:
         ustr += str(e[0]) + " : " + str(e[1]) + "\n"
-    dump_to_unicode_file("emojis.txt", ustr)
+    dump_to_unicode_file(conv_path, "emojis.txt", ustr)
+
+    # Wordlists
+    ustr = "" + metrics["A"]["name"] + "\n"
+    for e in metrics["A"]["wordlist"][:LIMIT]:
+        ustr += str(e[0]) + " : " + str(e[1]) + "\n"
+    ustr += metrics["B"]["name"] + "\n"
+    for e in metrics["B"]["wordlist"][:LIMIT]:
+        ustr += str(e[0]) + " : " + str(e[1]) + "\n"
+    dump_to_unicode_file(conv_path, "wordlist.txt", ustr)
+
+    # Big wordlists
+    ustr = "" + metrics["A"]["name"] + "\n"
+    count = 0
+    for e in metrics["A"]["wordlist"]:
+        if len(e[1]) >= 5:
+            ustr += str(e[0]) + " : " + str(e[1]) + "\n"
+            count += 1
+        if count >= LIMIT:
+            break
+    ustr += metrics["B"]["name"] + "\n"
+    count = 0
+    for e in metrics["B"]["wordlist"]:
+        if len(e[1]) >= 5:
+            ustr += str(e[0]) + " : " + str(e[1]) + "\n"
+            count += 1
+        if count >= LIMIT:
+            break
+    dump_to_unicode_file(conv_path, "bigwordlist.txt", ustr)
+
+    return metrics
 
 
-def calculate_graphs(chat_data, date_filter, wordlist):
-    return _message_graphs(chat_data, date_filter, wordlist)
+def calculate_graphs(conv_path, chat_data, date_filter, wordlist):
+    return _message_graphs(conv_path, chat_data, date_filter, wordlist)
 
 
 # https://stackoverflow.com/questions/16870663/how-do-i-validate-a-date-string-format-in-python
@@ -183,68 +257,73 @@ def main():
         print("input data is a single chat export")
         chat_data = raw_data
 
+    conv_path = chat_data["name"] + "_" + str(chat_data["id"])
+    
+    # Create directory
+    if not os.path.exists("__generated__/" + conv_path):
+        os.makedirs("__generated__/" + conv_path)
+
     wordlist = ""
     if opts.words is not None:
         wordlist = opts.words.lower().split(";")
 
     print("calculating metrics...")
-    calculate_metrics(chat_data, date_filter)
+    metrics = calculate_metrics(conv_path, chat_data, date_filter)
 
     print("generating graphs...")
-    raw = calculate_graphs(chat_data, date_filter, wordlist)
-    dump_dict_to_csv_file(
-        "raw_weekdays_person_" + raw["A"]["name"] + ".csv", raw["A"]["hourofday"]
+    raw = calculate_graphs(conv_path, chat_data, date_filter, wordlist)
+    dump_dict_to_csv_file(conv_path, 
+        "raw_weekdays_person.csv", raw["A"]["hourofday"]
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_weekdays_person_" + raw["B"]["name"] + ".csv", raw["B"]["hourofday"]
     )
-    dump_dict_to_csv_file(
-        "raw_months_person_" + raw["A"]["name"] + ".csv", raw["A"]["months"]
+    dump_dict_to_csv_file(conv_path, 
+        "raw_months_person.csv", raw["A"]["months"]
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_months_person_" + raw["B"]["name"] + ".csv", raw["B"]["months"]
     )
-    dump_dict_to_csv_file(
-        "raw_months_chars_person_" + raw["A"]["name"] + ".csv", raw["A"]["months_chars"]
+    dump_dict_to_csv_file(conv_path, 
+        "raw_months_chars_person.csv", raw["A"]["months_chars"]
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_months_chars_person_" + raw["B"]["name"] + ".csv", raw["B"]["months_chars"]
     )
-    dump_dict_to_csv_file(
-        "raw_monthly_pictures_person_" + raw["A"]["name"] + ".csv",
+    dump_dict_to_csv_file(conv_path, 
+        "raw_monthly_pictures_person.csv",
         raw["A"]["monthly_pictures"],
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_monthly_pictures_person_" + raw["B"]["name"] + ".csv",
         raw["B"]["monthly_pictures"],
     )
-    dump_dict_to_csv_file(
-        "raw_monthly_calls_person_" + raw["A"]["name"] + ".csv",
+    dump_dict_to_csv_file(conv_path, 
+        "raw_monthly_calls_person.csv",
         raw["A"]["monthly_calls"],
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_monthly_calls_person_" + raw["B"]["name"] + ".csv",
         raw["B"]["monthly_calls"],
     )
-    dump_dict_to_csv_file(
-        "raw_monthly_call_duration_person_" + raw["A"]["name"] + ".csv",
+    dump_dict_to_csv_file(conv_path, 
+        "raw_monthly_call_duration_person.csv",
         raw["A"]["monthly_call_duration"],
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_monthly_call_duration_person_" + raw["B"]["name"] + ".csv",
         raw["B"]["monthly_call_duration"],
     )
-    dump_dict_to_csv_file(
-        "raw_monthly_time_to_reply_person_" + raw["A"]["name"] + ".csv",
+    dump_dict_to_csv_file(conv_path, 
+        "raw_monthly_time_to_reply_person.csv",
         raw["A"]["monthly_time_to_reply"],
     )
-    dump_dict_to_csv_file(
+    dump_dict_to_csv_file(conv_path, 
         "raw_monthly_time_to_reply_person_" + raw["B"]["name"] + ".csv",
         raw["B"]["monthly_time_to_reply"],
     )
 
-    metrics = load_file_to_raw("__generated__/raw_metrics.json")
-    _print_results(metrics)
+    dump_text_results(conv_path, metrics)
     
     print("done")
 
