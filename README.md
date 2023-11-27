@@ -35,7 +35,7 @@ Where `"name"` is the name displayed in Telegram (usually the surname).
 
 ## Generated Files
 
-The script generates multiple files in the `__generated__` directory
+The script generates multiple files in the `__generated__/${person_name}_${person_id}` directory
 
 - `emojis.txt` contains unicode encoded emojis and their count
 - `raw_metrics.json` raw numerical data (contains all text of both persons / large file)
@@ -54,13 +54,13 @@ HTML Files (Plots):
 
 Raw Files (one for each person):
 
-- `raw_months_person_Person A.csv` csv vaues of month data
-- `raw_weekdays_person_Person A.csv` csv vaues of weekday data
-- `raw_months_chars_person_Person A.csv` csv vaues of monthly character count data
-- `raw_monthly_pictures_person_Person A.csv` csv vaues of monthly picture count data
-- `raw_monthly_calls_person_Person A.csv` csv vaues of monthly number of calls
-- `raw_monthly_call_duration_person_Person A.csv` csv values of monthly call duration
-- `raw_monthly_time_to_reply_person_Person A.csv` csv vaues of monthly reply time
+- `raw_months_person.csv` csv vaues of month data
+- `raw_weekdays_person.csv` csv vaues of weekday data
+- `raw_months_chars_person.csv` csv vaues of monthly character count data
+- `raw_monthly_pictures_person.csv` csv vaues of monthly picture count data
+- `raw_monthly_calls_person.csv` csv vaues of monthly number of calls
+- `raw_monthly_call_duration_person.csv` csv values of monthly call duration
+- `raw_monthly_time_to_reply_person.csv` csv vaues of monthly reply time
 
 
 ## Metrics

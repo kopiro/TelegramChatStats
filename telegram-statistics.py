@@ -276,26 +276,26 @@ def main():
         "raw_weekdays_person.csv", raw["A"]["hourofday"]
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_weekdays_person_" + raw["B"]["name"] + ".csv", raw["B"]["hourofday"]
+        "raw_weekdays_person.csv", raw["B"]["hourofday"]
     )
     dump_dict_to_csv_file(conv_path, 
         "raw_months_person.csv", raw["A"]["months"]
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_months_person_" + raw["B"]["name"] + ".csv", raw["B"]["months"]
+        "raw_months_person.csv", raw["B"]["months"]
     )
     dump_dict_to_csv_file(conv_path, 
         "raw_months_chars_person.csv", raw["A"]["months_chars"]
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_months_chars_person_" + raw["B"]["name"] + ".csv", raw["B"]["months_chars"]
+        "raw_months_chars_person.csv", raw["B"]["months_chars"]
     )
     dump_dict_to_csv_file(conv_path, 
         "raw_monthly_pictures_person.csv",
         raw["A"]["monthly_pictures"],
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_monthly_pictures_person_" + raw["B"]["name"] + ".csv",
+        "raw_monthly_pictures_person.csv",
         raw["B"]["monthly_pictures"],
     )
     dump_dict_to_csv_file(conv_path, 
@@ -303,7 +303,7 @@ def main():
         raw["A"]["monthly_calls"],
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_monthly_calls_person_" + raw["B"]["name"] + ".csv",
+        "raw_monthly_calls_person.csv",
         raw["B"]["monthly_calls"],
     )
     dump_dict_to_csv_file(conv_path, 
@@ -311,7 +311,7 @@ def main():
         raw["A"]["monthly_call_duration"],
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_monthly_call_duration_person_" + raw["B"]["name"] + ".csv",
+        "raw_monthly_call_duration_person.csv",
         raw["B"]["monthly_call_duration"],
     )
     dump_dict_to_csv_file(conv_path, 
@@ -319,7 +319,7 @@ def main():
         raw["A"]["monthly_time_to_reply"],
     )
     dump_dict_to_csv_file(conv_path, 
-        "raw_monthly_time_to_reply_person_" + raw["B"]["name"] + ".csv",
+        "raw_monthly_time_to_reply_person.csv",
         raw["B"]["monthly_time_to_reply"],
     )
 
