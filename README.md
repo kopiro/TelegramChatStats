@@ -2,21 +2,7 @@
 
 ---
 
-[![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
-
-[![volkswagen status](https://auchenberg.github.io/volkswagen/volkswargen_ci.svg?v=1)](https://github.com/auchenberg/volkswagen)
-
 Generate graphs and statistics from your exported Telegram messages.
-
-## Examples
-
-![images/emojis](examples/bokeh_emojis.png)
-
-![image/months](examples/bokeh_months.png)
-
-![image/hours](examples/bokeh_hourofday.png)
-
-![image/weekday](examples/bokeh_weekdays.png)
 
 ---
 
@@ -25,13 +11,13 @@ Generate graphs and statistics from your exported Telegram messages.
 First you need to export your Telegram data to a `result.json` file. You can do this in the settings of the Telegram desktop client.
 
 ```bash
-./telegram-statistics.py -i result.json -n "name"
+./telegram-statistics.py -i __import__/result.json -n "name"
 ```
 
 Open the file `result_2019-05-30.json` and parse the chat history with `Name Surname` starting from `2018-01-01` up to now and generate the substring plot for the emojis "😘💗💙💓🧡😘💕😚😍🥰"
 
 ```bash
-./telegram-statistics.py -i ../result_2019-05-30.json -n "Name Surname" -d 2018-01-01 -w "😘;💗;💙;💓;🧡;😘;💕;😚;😍;🥰"
+./telegram-statistics.py -i __import__/result_2019-05-30.json -n "Name Surname" -d 2018-01-01 -w "😘;💗;💙;💓;🧡;😘;💕;😚;😍;🥰"
 ```
 
 ### Import Whatsapp
@@ -42,14 +28,14 @@ However, the Whatsapp export is not as detailed as the Telegram export, so many 
 
 ```bash
 ./convert-whatsapp.py -i "Whatsapp Chat with Name.txt"
-./telegram-statistics -i whatsapp-result.json -n "Name Surname"
+./telegram-statistics -i __import__/whatsapp-result.json -n "Name Surname"
 ```
 
 Where `"name"` is the name displayed in Telegram (usually the surname).
 
 ## Generated Files
 
-The script generates multiple files.
+The script generates multiple files in the `__generated__` directory
 
 - `emojis.txt` contains unicode encoded emojis and their count
 - `raw_metrics.json` raw numerical data (contains all text of both persons / large file)
@@ -101,35 +87,16 @@ Raw Files (one for each person):
 
 ## Requirements
 
-- `python 3`
-- `bokeh`
-- `numpy`
-- `pandas`
-
----
-
-## Contributing
-
-I was inspired to do this project by a post on [reddit.com/r/LongDistance](https://www.reddit.com/r/LongDistance/comments/9jud8j/analysis_of_texts_from_a_long_distance/)
-
-I would love to hear if you have made some statistics yourself. Feel free to message me on [reddit](https://www.reddit.com/u/mnemocron)
-
-If you want to implement new metrics feel free to fork and send a pull request.
-Here are some things that I think could be improved or added:
-
-- normalize weekly / hourly data to "average number" per day/hour instead of "total number"
-- number of edited messages
-
-#### Possible Issues
-
-- csv separator is currently a semicolon `;`
-- other country specific errors (eg. with dates)
-
+```sh
+pip3 install -r requirements.txt
+```
 ---
 
 ## License
 
 MIT License
 
-Copyright (c) 2018 Simon Burkhardt
+Based on [the original project](https://github.com/mnemocron/TelegramChatStats) and modified to my own needs.
+
+Original Copyright (c) 2018 Simon Burkhardt
 

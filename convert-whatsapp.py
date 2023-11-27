@@ -138,7 +138,7 @@ def main():
     raw = load_file_to_srting(opts.indir)
     messages = split_string_to_messages(raw)
     formated = to_telegram_format(messages)
-    dump_to_json_file("whatsapp-result.json", formated)
+    dump_to_json_file("__import__/whatsapp-result.json", formated)
 
 
 if __name__ == "__main__":
