@@ -17,7 +17,7 @@ parser.add_option(
 
 # Writes a dict in json format to a file
 def dump_to_json_file(filename, data):
-    with open("__import__/" + filename, "w", encoding="utf-8") as fh:
+    with open(filename, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=1, sort_keys=True)
 
 
@@ -73,7 +73,12 @@ def main():
     raw = load_file_to_srting(opts.indir)
     messages = split_string_to_messages(raw)
     formatted = to_telegram_format(messages)
-    dump_to_json_file("human-results.json", formatted)
+
+    # Create dir
+    if not os.path.exists("__import__"):
+        os.makedirs("__import__")
+
+    dump_to_json_file("__import__/human-results.json", formatted)
 
 
 if __name__ == "__main__":

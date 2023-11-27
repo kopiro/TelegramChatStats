@@ -99,6 +99,11 @@ def main():
     raw = load_file_to_srting(opts.indir)
     messages = split_string_to_messages(raw)
     formatted = to_telegram_format(messages)
+
+    # Create dir
+    if not os.path.exists("__import__"):
+        os.makedirs("__import__")
+
     dump_to_json_file("__import__/whatsapp-result.json", formatted)
 
 
