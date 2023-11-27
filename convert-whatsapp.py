@@ -56,13 +56,13 @@ def to_telegram_format(messages):
         msg_split = message.split("]", 1)
         date_time = msg_split[0].replace('[', '')
         date_ = date_time.split(",")[0]
-        date_y = int(date_.split("-")[-1])
+        date_y = int(date_.split("-")[0])
         date_m = int(date_.split("-")[1])
-        date_d = int(date_.split("-")[0])
+        date_d = int(date_.split("-")[2])
         time_ = date_time.split(",")[1]
-        time_h = time_.split(":")[0]
-        time_m = time_.split(":")[1]
-        time_s = time_.split(":")[2]
+        time_h = int(time_.split(":")[0])
+        time_m = int(time_.split(":")[1])
+        time_s = int(time_.split(":")[2][0:2])
         msg_1_split = msg_split[1].split(":", 1)
         name = msg_1_split[0].strip()
         text = msg_1_split[1].strip()
@@ -72,7 +72,7 @@ def to_telegram_format(messages):
         data["chats"]["list"][0]["messages"][-1]["id"] = id
         data["chats"]["list"][0]["messages"][-1]["type"] = "message"
         data["chats"]["list"][0]["messages"][-1]["date"] = (
-            str(date_y).zfill(2)
+            str(date_y).zfill(4)
             + "-"
             + str(date_m).zfill(2)
             + "-"
