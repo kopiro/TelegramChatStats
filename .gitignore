@@ -3,6 +3,10 @@
 __generated__/
 __import__/
 
+# Venv
+bin/
+pyvenv.cfg
+
 # Whitelist requirements.txt
 !requirements.txt
 
