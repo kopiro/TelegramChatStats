@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import optparse
 import json
-import re
+import os
 from datetime import datetime
 
 parser = optparse.OptionParser("convert-human.py")
@@ -57,7 +57,11 @@ def to_telegram_format(messages):
         data["chats"]["list"][0]["messages"].append({})
         data["chats"]["list"][0]["messages"][-1]["id"] = id
         data["chats"]["list"][0]["messages"][-1]["type"] = "message"
-        data["chats"]["list"][0]["messages"][-1]["date"] = datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S.%f").strftime("%Y-%m-%dT%H:%M:%S")
+        # if we find "T", assume "%Y-%m-%dTH:%M:%S.%f", otherwise "%Y-%m-%d %H:%M:%S"
+        date_format = "%Y-%m-%dT%H:%M:%S"
+        if not "T" in date_time:
+            date_format = "%Y-%m-%d %H:%M:%S.%f" if '.' in date_time else "%Y-%m-%d %H:%M:%S"
+        data["chats"]["list"][0]["messages"][-1]["date"] = datetime.strptime(date_time, date_format).strftime("%Y-%m-%dT%H:%M:%S")
         data["chats"]["list"][0]["messages"][-1]["edited"] = "1970-01-01T01:00:00"
         data["chats"]["list"][0]["messages"][-1]["from"] = name
         data["chats"]["list"][0]["messages"][-1]["text"] = text
